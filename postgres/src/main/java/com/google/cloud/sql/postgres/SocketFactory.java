@@ -20,9 +20,12 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.cloud.sql.core.SslSocketFactory;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * A Postgres {@link SocketFactory} that establishes a secure connection to a Cloud SQL instance
@@ -33,21 +36,51 @@ import java.util.logging.Logger;
 public class SocketFactory extends javax.net.SocketFactory {
   private static final Logger logger = Logger.getLogger(SocketFactory.class.getName());
 
-  private final String instanceName;
+  private  String instanceName = "";
+  private  String credential_json = "";
 
-  public SocketFactory(String instanceName) {
+
+  //public SocketFactory(String instanceName, String credential_json) {
+  public SocketFactory(String instanceNameAndCredential_json) {
     checkArgument(
-        instanceName != null,
-        "socketFactoryArg property not set. Please specify this property in the JDBC "
-            + "URL or the connection Properties with the instance connection name in "
-            + "form \"project:region:instance\"");
-    this.instanceName = instanceName;
+            instanceNameAndCredential_json.split(":::" )[0] != null,
+            "socketFactoryArg property not set. Please specify this property in the JDBC "
+                    + "URL or the connection Properties with the instance connection name in "
+                    + "form \"project:region:instance\"" );
+
+    this.instanceName = instanceNameAndCredential_json.split(":::" )[0];
+    checkArgument(
+            instanceNameAndCredential_json.split(":::" )[1] != null,
+            "Please specify credential string in json format." );
+
+
+    String temp = instanceNameAndCredential_json.split(":::" )[1];
+    String str = temp;
+    Pattern pattern = Pattern.compile("-----BEGIN PRIVATE KEY-----(.*)-----END PRIVATE KEY-----");
+    Matcher matcher = pattern.matcher(str);
+    String private_key = "";
+    while (matcher.find()) {
+      private_key = matcher.group(1);
+    }
+    private_key = private_key.replace(" ", "+");
+    int begin = temp.indexOf("-----BEGIN PRIVATE KEY-----");
+    int begin_length = "-----BEGIN PRIVATE KEY-----".length();
+
+    int end = temp.indexOf("-----END PRIVATE KEY-----");
+
+    this.credential_json = temp.substring(0, begin+begin_length) + private_key + temp.substring(end, temp.length());
+
+    System.out.printf("this.credential_json in SocketFactory-> %s\n",this.credential_json);
+
+
+
   }
+
 
   @Override
   public Socket createSocket() throws IOException {
     logger.info(String.format("Connecting to Cloud SQL instance [%s].", instanceName));
-    return SslSocketFactory.getInstance().create(instanceName);
+    return SslSocketFactory.getInstance(this.credential_json).create(instanceName);
   }
 
   @Override

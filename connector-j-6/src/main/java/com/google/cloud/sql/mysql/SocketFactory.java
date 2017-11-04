@@ -45,7 +45,7 @@ public class SocketFactory implements com.mysql.cj.api.io.SocketFactory {
 
     logger.info(String.format("Connecting to Cloud SQL instance [%s].", instanceName));
 
-    this.socket = SslSocketFactory.getInstance().create(instanceName);
+    this.socket = SslSocketFactory.getInstance("").create(instanceName);
     return this.socket;
   }
 

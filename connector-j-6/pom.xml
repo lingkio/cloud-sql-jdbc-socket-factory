@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.google.cloud.sql</groupId>
+        <groupId>io.lingk</groupId>
         <artifactId>jdbc-socket-factory-parent</artifactId>
         <version>1.0.5-SNAPSHOT</version>
     </parent>
@@ -24,7 +24,7 @@
             <version>6.0.4</version>
         </dependency>
         <dependency>
-            <groupId>com.google.cloud.sql</groupId>
+            <groupId>io.lingk</groupId>
             <artifactId>jdbc-socket-factory-core</artifactId>
             <version>1.0.5-SNAPSHOT</version>
         </dependency>

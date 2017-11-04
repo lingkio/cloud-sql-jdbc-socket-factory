@@ -37,6 +37,7 @@ import com.google.common.util.concurrent.RateLimiter;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
@@ -65,6 +66,8 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 import javax.xml.bind.DatatypeConverter;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Factory responsible for obtaining an ephemeral certificate, if necessary, and establishing a
@@ -120,24 +123,15 @@ public class SslSocketFactory {
     this.serverProxyPort = serverProxyPort;
   }
 
-  public static synchronized SslSocketFactory getInstance() {
+  public static synchronized SslSocketFactory getInstance(String credential_json) {
     if (sslSocketFactory == null) {
       logger.info("First Cloud SQL connection, generating RSA key pair.");
       KeyPair keyPair = generateRsaKeyPair();
       CredentialFactory credentialFactory;
-      if (System.getProperty(CredentialFactory.CREDENTIAL_FACTORY_PROPERTY) != null) {
-        try {
-          credentialFactory =
-              (CredentialFactory)
-                  Class.forName(System.getProperty(CredentialFactory.CREDENTIAL_FACTORY_PROPERTY))
-                      .newInstance();
-        } catch (Exception e) {
-          throw new RuntimeException(e);
-        }
-      } else {
-        credentialFactory = new ApplicationDefaultCredentialFactory();
-      }
-      Credential credential = credentialFactory.create();
+
+      credentialFactory = new LingkCredentialFactory();
+
+      Credential credential = credentialFactory.create(credential_json);
       SQLAdmin adminApi = createAdminApiClient(credential);
       sslSocketFactory =
           new SslSocketFactory(
@@ -307,7 +301,7 @@ public class SslSocketFactory {
       instanceCaCertificate =
           certificateFactory.generateCertificate(
               new ByteArrayInputStream(
-                  instance.getServerCaCert().getCert().getBytes(StandardCharsets.UTF_8)));
+                  instance.getServerCaCert().getCert().getBytes(UTF_8)));
     } catch (CertificateException e) {
       throw
           new RuntimeException(
@@ -494,7 +488,7 @@ public class SslSocketFactory {
     try {
       return
           (X509Certificate) certificateFactory.generateCertificate(
-              new ByteArrayInputStream(response.getCert().getBytes(StandardCharsets.UTF_8)));
+              new ByteArrayInputStream(response.getCert().getBytes(UTF_8)));
     } catch (CertificateException e) {
       throw
           new RuntimeException(
@@ -539,12 +533,14 @@ public class SslSocketFactory {
     return adminApiBuilder.build();
   }
 
-  private static class ApplicationDefaultCredentialFactory implements CredentialFactory {
+  private static class LingkCredentialFactory implements CredentialFactory {
     @Override
-    public Credential create() {
+    public Credential create(String credential_json) {
       GoogleCredential credential;
       try {
-        credential = GoogleCredential.getApplicationDefault();
+
+        InputStream credentialStream = new ByteArrayInputStream(credential_json.getBytes(UTF_8));
+        credential = GoogleCredential.fromStream(credentialStream);
       } catch (IOException e) {
         throw
             new RuntimeException(
