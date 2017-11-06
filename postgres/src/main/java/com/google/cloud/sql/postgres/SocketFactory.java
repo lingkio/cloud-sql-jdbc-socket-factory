@@ -70,9 +70,6 @@ public class SocketFactory extends javax.net.SocketFactory {
 
     this.credential_json = temp.substring(0, begin+begin_length) + private_key + temp.substring(end, temp.length());
 
-    System.out.printf("this.credential_json in SocketFactory-> %s\n",this.credential_json);
-
-
 
   }
 
