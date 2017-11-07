@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.Properties;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * A MySQL {@link SocketFactory} that establishes a secure connection to a Cloud SQL instance using
@@ -37,16 +39,44 @@ public class SocketFactory implements com.mysql.jdbc.SocketFactory {
 
   @Override
   public Socket connect(String hostname, int portNumber, Properties props) throws IOException {
-    String instanceName = props.getProperty("cloudSqlInstance");
+    String[] instanceNameAndCredential = props.getProperty("cloudSqlInstanceAndCredential").split(":::" );
+    String instanceName = instanceNameAndCredential[0];
+    String credential = instanceNameAndCredential[1];
+
     checkArgument(
-        instanceName != null,
-        "cloudSqlInstance property not set. Please specify this property in the JDBC URL or "
-            + "the connection Properties with value in form \"project:region:instance\"");
+            instanceName != "",
+            "cloudSqlInstanceAndCredential property not set. Please specify this property in the JDBC URL or "
+                    + "the connection Properties with value in form \"project:region:instance\" along with a credential.");
+
+    checkArgument(
+            credential != "",
+            "cloudSqlInstanceAndCredential property not set. Please specify this property in the JDBC URL or "
+                    + "the connection Properties with value in form \"project:region:instance\" along with a credential.");
+
 
     logger.info(String.format("Connecting to Cloud SQL instance [%s].", instanceName));
 
-    this.socket = SslSocketFactory.getInstance("").create(instanceName);
-    return socket;
+
+    String temp = credential;
+    String str = temp;
+    Pattern pattern = Pattern.compile("-----BEGIN PRIVATE KEY-----(.*)-----END PRIVATE KEY-----");
+    Matcher matcher = pattern.matcher(str);
+    String private_key = "";
+
+    while (matcher.find()) {
+      private_key = matcher.group(1);
+    }
+
+    private_key = private_key.replace(" ", "+");
+    int begin = temp.indexOf("-----BEGIN PRIVATE KEY-----");
+    int begin_length = "-----BEGIN PRIVATE KEY-----".length();
+
+    int end = temp.indexOf("-----END PRIVATE KEY-----");
+
+    String credential_json = temp.substring(0, begin+begin_length) + private_key + temp.substring(end, temp.length());
+
+    this.socket = SslSocketFactory.getInstance(credential_json).create(instanceName);
+    return this.socket;
   }
 
   @Override
