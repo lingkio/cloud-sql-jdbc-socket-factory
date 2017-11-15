@@ -7,6 +7,11 @@ that allows a user with the appropriate permissions to connect to a Cloud SQL
 database without having to deal with IP whitelisting or SSL certificates 
 manually. 
 
+## Build & Deploy
+ * mvn clean package
+ * mvn deploy
+
+
 ## Instructions
 
 The library is [available in Maven Central](http://search.maven.org/#artifactdetails%7Ccom.google.cloud.sql%7Cmysql-socket-factory%7C1.0.4%7Cjar).
@@ -25,7 +30,7 @@ Add a dependency using your favorite build tool. Maven and Gradle examples are s
 <dependency>
     <groupId>com.google.cloud.sql</groupId>
     <artifactId>mysql-socket-factory</artifactId>
-    <version>1.0.4</version>
+    <version>1.0.6</version>
 </dependency>
 ```
 
