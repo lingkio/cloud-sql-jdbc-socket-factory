@@ -19,13 +19,16 @@ package com.google.cloud.sql.postgres;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.cloud.sql.core.SslSocketFactory;
+
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 /**
  * A Postgres {@link SocketFactory} that establishes a secure connection to a Cloud SQL instance
@@ -34,8 +37,8 @@ import java.util.regex.Pattern;
  * <p>The heavy lifting is done by the singleton {@link SslSocketFactory} class.
  */
 public class SocketFactory extends javax.net.SocketFactory {
-  private static final Logger logger = Logger.getLogger(SocketFactory.class.getName());
-
+  //private static final Logger logger = Logger.getLogger(SocketFactory.class.getName());
+  private static Logger log = LogManager.getLogger(SocketFactory.class);
   private  String instanceName = "";
   private  String credential_json = "";
 
@@ -75,7 +78,7 @@ public class SocketFactory extends javax.net.SocketFactory {
 
   @Override
   public Socket createSocket() throws IOException {
-    logger.info(String.format("Connecting to Cloud SQL instance [%s].", instanceName));
+    log.info(String.format("Connecting to Cloud SQL instance [%s].", instanceName));
     return SslSocketFactory.getInstance(this.credential_json).create(instanceName);
   }
 

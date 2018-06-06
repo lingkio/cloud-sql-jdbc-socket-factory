@@ -56,7 +56,8 @@ import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import javax.annotation.Nullable;
 import javax.net.ssl.KeyManagerFactory;
@@ -79,7 +80,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * <p>The API of this class is subject to change without notice.
  */
 public class SslSocketFactory {
-  private static final Logger logger = Logger.getLogger(SslSocketFactory.class.getName());
+  private static Logger log = LogManager.getLogger(SslSocketFactory.class);
 
   static final String ADMIN_API_NOT_ENABLED_REASON = "accessNotConfigured";
   static final String INSTANCE_NOT_AUTHORIZED_REASON = "notAuthorized";
@@ -125,7 +126,7 @@ public class SslSocketFactory {
 
   public static synchronized SslSocketFactory getInstance(String credential_json) {
     if (sslSocketFactory == null) {
-      logger.info("First Cloud SQL connection, generating RSA key pair.");
+      log.info("First Cloud SQL connection, generating RSA key pair.");
       KeyPair keyPair = generateRsaKeyPair();
       CredentialFactory credentialFactory;
 
@@ -145,7 +146,7 @@ public class SslSocketFactory {
     try {
       return createAndConfigureSocket(instanceName, CertificateCaching.USE_CACHE);
     } catch (SSLHandshakeException e) {
-      logger.warning(
+      log.warn(
           String.format(
               "SSL handshake failed for Cloud SQL instance [%s], "
                   + "retrying with new certificate.\n%s",
@@ -153,7 +154,7 @@ public class SslSocketFactory {
               Throwables.getStackTraceAsString(e)));
 
       if (!forcedRenewRateLimiter.tryAcquire()) {
-        logger.warning(
+        log.warn(
             String.format(
                 "Renewing too often, rate limiting certificate renewal for Cloud SQL "
                     + "instance [%s].",
@@ -165,7 +166,7 @@ public class SslSocketFactory {
   }
 
   private static void logTestPropertyWarning(String property) {
-    logger.warning(
+    log.warn(
         String.format(
             "%s is a test property and may be changed or removed in a future version without "
                 + "notice.",
@@ -176,7 +177,7 @@ public class SslSocketFactory {
       String instanceName, CertificateCaching certificateCaching) throws IOException {
     InstanceSslInfo instanceSslInfo = getInstanceSslInfo(instanceName, certificateCaching);
     String ipAddress = instanceSslInfo.getInstanceIpAddress();
-    logger.info(
+    log.info(
         String.format(
             "Connecting to Cloud SQL instance [%s] on IP [%s].", instanceName, ipAddress));
     SSLSocket sslSocket =
@@ -203,7 +204,7 @@ public class SslSocketFactory {
       if (lookupResult != null) {
         if (!lookupResult.isSuccessful()
             && (clock.now() - lookupResult.getLastFailureMillis()) < 60 * 1000) {
-          logger.warning(
+          log.warn(
               "Re-throwing cached exception due to attempt to refresh instance information too "
                   + "soon after error.");
           throw lookupResult.getException().get();
@@ -217,7 +218,7 @@ public class SslSocketFactory {
             try {
               details.getEphemeralCertificate().checkValidity(calendar.getTime());
             } catch (CertificateException e) {
-              logger.info(
+              log.info(
                   String.format(
                       "Ephemeral certificate for Cloud SQL instance [%s] is about to expire, "
                           + "obtaining new one.",
@@ -269,7 +270,7 @@ public class SslSocketFactory {
 
   private InstanceSslInfo fetchInstanceSslInfo(
       String instanceConnectionString, String projectId, String region, String instanceName) {
-    logger.info(
+    log.info(
         String.format(
             "Obtaining ephemeral certificate for Cloud SQL instance [%s].",
             instanceConnectionString));
