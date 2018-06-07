@@ -92,7 +92,7 @@ public class SslSocketFactory {
   private static final int DEFAULT_SERVER_PROXY_PORT = 3307;
   private static final int RSA_KEY_SIZE = 2048;
 
-  private static SslSocketFactory sslSocketFactory;
+  private static final Map<String, SslSocketFactory> sslSocketFactories = new HashMap<String, SslSocketFactory>();
 
   private final CertificateFactory certificateFactory;
   private final Clock clock;
@@ -125,8 +125,9 @@ public class SslSocketFactory {
   }
 
   public static synchronized SslSocketFactory getInstance(String credential_json) {
-    if (sslSocketFactory == null) {
-      log.info("First Cloud SQL connection, generating RSA key pair.");
+    if (sslSocketFactories.get(credential_json) == null) {
+      log.error("First Cloud SQL connection, generating RSA key pair.");
+      log.error("using credential_json: " + credential_json);
       KeyPair keyPair = generateRsaKeyPair();
       CredentialFactory credentialFactory;
 
@@ -134,11 +135,12 @@ public class SslSocketFactory {
 
       Credential credential = credentialFactory.create(credential_json);
       SQLAdmin adminApi = createAdminApiClient(credential);
-      sslSocketFactory =
+      SslSocketFactory sslSocketFactory =
           new SslSocketFactory(
               new Clock(), keyPair, credential, adminApi, DEFAULT_SERVER_PROXY_PORT);
+      sslSocketFactories.put(credential_json, sslSocketFactory);
     }
-    return sslSocketFactory;
+    return sslSocketFactories.get(credential_json);
   }
 
   // TODO(berezv): separate creating socket and performing connection to make it easier to test
