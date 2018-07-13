@@ -15,28 +15,18 @@ public class ListTables {
     // TODO: fill this in
     // The instance connection name can be obtained from the instance overview page in Cloud Console
     // or by running "gcloud sql instances describe <instance> | grep connectionName".
-    String instanceConnectionName = "mythic-hulling-182618:us-central1:lingk-cloud-sql-test";
+    String instanceConnectionName = "someInstanceName";
 
     // TODO: fill this in
     // The database from which to list tables.
-    String databaseName = "postgres";
+    String databaseName = "SomeDatabaseName";
 
-    String username = "postgres";
+    String username = "SomeUserName";
 
     // TODO: fill this in
     // This is the password that was set via the Cloud Console or empty if never set
     // (not recommended).
-    String password = "welcome@1";
-
-    //if (instanceConnectionName.equals("mythic-hulling-182618:us-central1:lingk-cloud-sql-test")) {
-    //  System.err.println("Please update the sample to specify the instance connection name.");
-    //  System.exit(1);
-    //}
-
-    //if (password.equals("welcome@1")) {
-    //  System.err.println("Please update the sample to specify the postgres password.");
-    //  System.exit(1);
-    // }
+    String password = "SomePassword";
 
     //[START doc-example]
     String jdbcUrl = String.format(
